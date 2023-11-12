@@ -10,7 +10,6 @@
 #include "../shapes/circle.h"
 #include "../shapes/rect.h"
 #include "../shapes/shape.h"
-#include "card.h"
 
 using std::vector, std::unique_ptr, std::make_unique, glm::ortho, glm::mat4, glm::vec3, glm::vec4;
 
@@ -30,16 +29,8 @@ class Engine {
         /// @details Initialized in initShaders()
         unique_ptr<ShaderManager> shaderManager;
 
-        // decks of cards
-        vector<unique_ptr<card>> deck;
-        vector<unique_ptr<card>> cardsInPlay;
-        vector<unique_ptr<card>> player1;
-        vector<unique_ptr<card>> player2;
 
-        // Shapes
-        vector<unique_ptr<Shape>> cardShapes;
-
-    // Shaders
+        // Shaders
         Shader shapeShader;
 
         double mouseX, mouseY;
