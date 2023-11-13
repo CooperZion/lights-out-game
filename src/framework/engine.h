@@ -29,8 +29,13 @@ class Engine {
         /// @details Initialized in initShaders()
         unique_ptr<ShaderManager> shaderManager;
 
+        // Shapes
+        vector<vector<int>> coordinateMatrix;   // A 2-D vector of coordinates for the lights
+        vector<unique_ptr<Rect>> lights;
+        unique_ptr<Rect> cursor;
 
-        // Shaders
+
+    // Shaders
         Shader shapeShader;
 
         double mouseX, mouseY;

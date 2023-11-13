@@ -38,6 +38,29 @@ void Rect::initVectors() {
         1, 2, 3  // Second triangle
     });
 }
+
+bool Rect::isOverlapping(const Rect &r1, const Rect &r2) {
+    if (r1.getLeft() > r2.getRight() || r2.getLeft() > r1.getRight()) {
+        return false;
+    } else if (r1.getBottom() > r2.getTop() || r2.getBottom() > r1.getTop()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+bool Rect::isOverlapping(const Rect &other) const {
+    return isOverlapping(*this, other);
+}
+
+bool Rect::isOverlapping(const Shape &other) const {
+    // Dynamic cast to check if the other shape is a Rect
+    const Rect *otherRect = dynamic_cast<const Rect *>(&other);
+    if (otherRect) {
+        return isOverlapping(*this, *otherRect);
+    }
+    return false;
+}
 // Overridden Getters from Shape
 float Rect::getLeft() const        { return pos.x - (size.x / 2); }
 float Rect::getRight() const       { return pos.x + (size.x / 2); }

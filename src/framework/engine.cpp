@@ -5,6 +5,7 @@ const color BLACK(0, 0, 0);
 const color BLUE(0, 0, 1);
 const color RED(1, 0, 0);
 const color GREEN(0, 1, 1);
+int NUM_LIGHTS = 25;
 
 Engine::Engine() {
     this->initWindow();
@@ -55,6 +56,20 @@ void Engine::initShaders() {
 }
 
 void Engine::initShapes() {
+    // Shape object for the cursor
+    cursor = make_unique<Rect>(shapeShader, vec2(10, 10), vec2(0, 0), WHITE);
+
+    for (int column = 0; column < 5; column++) {
+        for (int row = 0; row < 5; row++) {
+            coordinateMatrix.push_back({(int) (0.2 * column * WIDTH), (int) (0.2 * row * HEIGHT)});
+        }
+    }
+
+    for(int ii = 0; ii < NUM_LIGHTS; ii++) {
+        vector<int> coordVect = coordinateMatrix[ii];
+        lights[ii] = make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{WIDTH / 4, HEIGHT / 2},
+                                           color{WHITE.red, WHITE.green, WHITE.blue, WHITE.alpha});
+    }
 }
 
 void Engine::processInput() {
@@ -68,6 +83,15 @@ void Engine::processInput() {
     // Mouse position saved to check for collisions
     glfwGetCursorPos(window, &mouseX, &mouseY);
     mouseY = HEIGHT - mouseY; // make sure mouse y-axis isn't flipped
+
+    cursor->setPosX(mouseX);
+    cursor->setPosY(mouseY);
+
+    for(const unique_ptr<Rect> &light : lights) {
+        if(light->isOverlapping(*cursor)) {
+            // Make the light outline in red
+        }
+    }
 }
 
 
@@ -78,7 +102,7 @@ void Engine::update() {
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-
+    // Add changes to shapes here
 
 }
 
@@ -89,7 +113,7 @@ void Engine::render() {
 
     shapeShader.use();
 
-
+    // display shapes here
 
     glfwSwapBuffers(window);
 }
