@@ -57,6 +57,7 @@ class Shape {
         // Color Functions
         vec4 getColor4() const;
         vec3 getColor3() const;
+        struct color getColor() const;
         float getRed() const;
         float getGreen() const;
         float getBlue() const;

@@ -11,6 +11,7 @@ class Rect : public Shape {
 private:
     /// @brief Initializes the vertices and indices of the square
     void initVectors();
+    struct color color;
 public:
     /// @brief Construct a new Square object
     /// @details This constructor will call the InitRenderData function.

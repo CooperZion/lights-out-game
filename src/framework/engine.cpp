@@ -1,7 +1,9 @@
 #include "engine.h"
 
 const color WHITE(1, 1, 1);
+vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
 const color BLACK(0, 0, 0);
+const color YELLOW(1, 1, 0);
 const color BLUE(0, 0, 1);
 const color RED(1, 0, 0);
 const color GREEN(0, 1, 1);
@@ -79,6 +81,14 @@ void Engine::processInput() {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+    if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        for(const unique_ptr<Rect> &light : lights) {
+            if(light->isOverlapping(*cursor)) {
+                if(light->getColor3() == WHITE_VECT) {light->setColor(YELLOW);}
+                else {light->setColor(WHITE);}
+            }
+        }
+    }
 
     // Mouse position saved to check for collisions
     glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -113,7 +123,13 @@ void Engine::render() {
 
     shapeShader.use();
 
-    // display shapes here
+    for (const unique_ptr<Rect> &light: lights) {
+        light->setUniforms();
+        light->draw();
+    }
+
+    cursor->setUniforms();
+    cursor->draw();
 
     glfwSwapBuffers(window);
 }
