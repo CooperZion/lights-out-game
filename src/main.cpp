@@ -4,6 +4,7 @@
 
 
 int main(int argc, char *argv[]) {
+    glfwInit();
     Engine engine;
 
     while (!engine.shouldClose()) {

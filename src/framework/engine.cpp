@@ -72,8 +72,8 @@ void Engine::initShapes() {
 
     for(int ii = 0; ii < NUM_LIGHTS; ii++) {
         vector<int> coordVect = coordinateMatrix[ii];
-        lights[ii] = make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{WIDTH / 4, HEIGHT / 2},
-                                           color{WHITE.red, WHITE.green, WHITE.blue, WHITE.alpha});
+        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{WIDTH / 4, HEIGHT / 2},
+                                           color{WHITE.red, WHITE.green, WHITE.blue, WHITE.alpha}));
     }
 }
 
