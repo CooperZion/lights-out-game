@@ -9,6 +9,9 @@ const color RED(1, 0, 0);
 const color GREEN(0, 1, 1);
 int NUM_LIGHTS = 25;
 
+enum state {start, play, over};
+state screen = start;
+
 Engine::Engine() {
     this->initWindow();
     this->initShaders();
@@ -81,14 +84,6 @@ void Engine::processInput() {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
-    if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        for(const unique_ptr<Rect> &light : lights) {
-            if(light->isOverlapping(*cursor)) {
-                if(light->getColor3() == WHITE_VECT) {light->setColor(YELLOW);}
-                else {light->setColor(WHITE);}
-            }
-        }
-    }
 
     // Mouse position saved to check for collisions
     glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -97,9 +92,25 @@ void Engine::processInput() {
     cursor->setPosX(mouseX);
     cursor->setPosY(mouseY);
 
-    for(const unique_ptr<Rect> &light : lights) {
-        if(light->isOverlapping(*cursor)) {
-            // Make the light outline in red
+    if (screen == start && glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        screen = play;
+    }
+
+    if (screen == play) {
+        if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+            for (const unique_ptr<Rect> &light: lights) {
+                if (light->isOverlapping(*cursor)) {
+                    if (light->getColor3() == WHITE_VECT) { light->setColor(YELLOW); }
+                    else { light->setColor(WHITE); }
+                    // TODO: Change the color of the neighboring lights
+                }
+            }
+        }
+
+        for(const unique_ptr<Rect> &light : lights) {
+            if(light->isOverlapping(*cursor)) {
+                // TODO: Make the lights outline in red here
+            }
         }
     }
 }
@@ -112,7 +123,7 @@ void Engine::update() {
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    // Add changes to shapes here
+    // TODO: If all the lights are off, change screen to over
 
 }
 
@@ -123,9 +134,19 @@ void Engine::render() {
 
     shapeShader.use();
 
-    for (const unique_ptr<Rect> &light: lights) {
-        light->setUniforms();
-        light->draw();
+    switch (screen) {
+        case start: {
+            // TODO: Add instructions screen with text (freetype?)
+        }
+        case play: {
+            for (const unique_ptr<Rect> &light: lights) {
+                light->setUniforms();
+                light->draw();
+            }
+        }
+        case over: {
+            // TODO: Show win message
+        }
     }
 
     cursor->setUniforms();
