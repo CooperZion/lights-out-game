@@ -4,6 +4,7 @@ const color WHITE(1, 1, 1);
 vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
 const color BLACK(0, 0, 0);
 const color YELLOW(1, 1, 0);
+vec3 YELLOW_VECT = {YELLOW.red, YELLOW.green, YELLOW.blue};
 const color BLUE(0, 0, 1);
 const color RED(1, 0, 0);
 const color GREEN(0, 1, 1);
@@ -66,6 +67,8 @@ void Engine::initShapes() {
 
     for (int column = 0; column < 5; column++) {
         for (int row = 0; row < 5; row++) {
+            // TODO: Change this to be the correct vector of coordinates, may need to be done manually
+            // This will probably just need to be guess-and-check
             coordinateMatrix.push_back({(int) (0.2 * column * WIDTH), (int) (0.2 * row * HEIGHT)});
         }
     }
@@ -110,6 +113,9 @@ void Engine::processInput() {
         for(const unique_ptr<Rect> &light : lights) {
             if(light->isOverlapping(*cursor)) {
                 // TODO: Make the lights outline in red here
+                // There will be a second set of rectangles with the same center coordinates
+                // as the first set, but slightly larger and red, and they're only rendered
+                // when their accompanying rectangle is hovered over (this if-statement)
             }
         }
     }
@@ -123,8 +129,16 @@ void Engine::update() {
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    // TODO: If all the lights are off, change screen to over
-
+    // If we're playing and all the lights are off, change screen to over (end the game)
+    if (screen == play) {
+        bool allLightsOff = true;
+        for (const unique_ptr<Rect> &light: lights) {
+            if (light->getColor3() == YELLOW_VECT) {
+                allLightsOff = false;
+            }
+        }
+        if (allLightsOff) {screen = over;}
+    }
 }
 
 void Engine::render() {
