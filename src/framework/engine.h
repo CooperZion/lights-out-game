@@ -10,6 +10,7 @@
 #include "../shapes/circle.h"
 #include "../shapes/rect.h"
 #include "../shapes/shape.h"
+#include "fontRenderer.h"
 
 using std::vector, std::unique_ptr, std::make_unique, glm::ortho, glm::mat4, glm::vec3, glm::vec4;
 
@@ -23,7 +24,7 @@ class Engine {
         GLFWwindow* window{};
 
         /// @brief The width and height of the window.
-        const unsigned int WIDTH = 1600, HEIGHT = 1000; // Window dimensions
+        const unsigned int WIDTH = 1600, HEIGHT = 1200; // Window dimensions
 
         /// @brief Responsible for loading and storing all the shaders used in the project.
         /// @details Initialized in initShaders()
@@ -37,6 +38,8 @@ class Engine {
 
     // Shaders
         Shader shapeShader;
+
+        unique_ptr<FontRenderer> fontRenderer;
 
         double mouseX, mouseY;
 

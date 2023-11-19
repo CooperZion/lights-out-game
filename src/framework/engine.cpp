@@ -1,4 +1,7 @@
 #include "engine.h"
+#include <string>
+#include <sstream>
+#include <iostream>
 
 const color WHITE(1, 1, 1);
 vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
@@ -12,6 +15,7 @@ int NUM_LIGHTS = 25;
 
 enum state {start, play, over};
 state screen = start;
+static int squareClicked = 0;
 
 Engine::Engine() {
     this->initWindow();
@@ -59,6 +63,7 @@ void Engine::initShaders() {
                                                   nullptr, "circle");
     shapeShader.use();
     shapeShader.setMatrix4("projection", this->PROJECTION);
+    fontRenderer = make_unique<FontRenderer>(shaderManager->getShader("text"), "../res/fonts/MxPlus_IBM_BIOS.ttf", 24);
 }
 
 void Engine::initShapes() {
@@ -95,7 +100,7 @@ void Engine::processInput() {
     cursor->setPosX(mouseX);
     cursor->setPosY(mouseY);
 
-    if (screen == start && glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+    if (screen == start && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         screen = play;
     }
 
@@ -103,6 +108,7 @@ void Engine::processInput() {
         if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             for (const unique_ptr<Rect> &light: lights) {
                 if (light->isOverlapping(*cursor)) {
+                    ++squareClicked;
                     if (light->getColor3() == WHITE_VECT) { light->setColor(YELLOW); }
                     else { light->setColor(WHITE); }
                     // TODO: Change the color of the neighboring lights
@@ -150,7 +156,13 @@ void Engine::render() {
 
     switch (screen) {
         case start: {
-            // TODO: Add instructions screen with text (freetype?)
+            // Add instructions screen with text (freetype?)
+            string message = "Put out all the lights!\n"
+                             "Press s to start";
+            // (12 * message.length()) is the offset to center text.
+            // 12 pixels is the width of each character scaled by 1.
+            this->fontRenderer->renderText(message, WIDTH/2 - (12 * message.length()), HEIGHT/2, 1, vec3{1, 1, 1});
+            break;
         }
         case play: {
             for (const unique_ptr<Rect> &light: lights) {
@@ -159,12 +171,18 @@ void Engine::render() {
             }
         }
         case over: {
-            // TODO: Show win message
+            // Show win message
+            // TODO: Add instructions screen with text (freetype?)
+            string message = "Winner!";
+            // (12 * message.length()) is the offset to center text.
+            // 12 pixels is the width of each character scaled by 1.
+            this->fontRenderer->renderText(message, WIDTH/2 - (12 * message.length()), HEIGHT/2, 1, vec3{1, 1, 1});
+            break;
         }
     }
 
-    cursor->setUniforms();
-    cursor->draw();
+//    cursor->setUniforms();
+//    cursor->draw();
 
     glfwSwapBuffers(window);
 }
