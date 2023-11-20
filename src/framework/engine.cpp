@@ -1,6 +1,4 @@
 #include "engine.h"
-#include <string>
-#include <sstream>
 #include <iostream>
 
 const color WHITE(1, 1, 1);
@@ -8,14 +6,13 @@ vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
 const color BLACK(0, 0, 0);
 const color YELLOW(1, 1, 0);
 vec3 YELLOW_VECT = {YELLOW.red, YELLOW.green, YELLOW.blue};
-const color BLUE(0, 0, 1);
 const color RED(1, 0, 0);
-const color GREEN(0, 1, 1);
 int NUM_LIGHTS = 25;
+static int moveCount = 0;
+
 
 enum state {start, play, over};
 state screen = start;
-static int squareClicked = 0;
 
 Engine::Engine() {
     this->initWindow();
@@ -23,7 +20,7 @@ Engine::Engine() {
     this->initShapes();
 }
 
-Engine::~Engine() {}
+Engine::~Engine() = default;
 
 unsigned int Engine::initWindow(bool debug) {
     // glfw: initialize and configure
@@ -58,12 +55,19 @@ unsigned int Engine::initWindow(bool debug) {
 
 void Engine::initShaders() {
     shaderManager = make_unique<ShaderManager>();
-    shapeShader = this->shaderManager->loadShader("../res/shaders/circle.vert",
-                                                  "../res/shaders/circle.frag",
-                                                  nullptr, "circle");
+    shapeShader = this->shaderManager->loadShader("../res/shaders/rect.vert",
+                                                  "../res/shaders/rect.frag",
+                                                  nullptr, "rect");
     shapeShader.use();
     shapeShader.setMatrix4("projection", this->PROJECTION);
-    fontRenderer = make_unique<FontRenderer>(shaderManager->getShader("text"), "../res/fonts/MxPlus_IBM_BIOS.ttf", 24);
+
+    // Configure text shader and renderer
+    textShader = shaderManager->loadShader("../res/shaders/text.vert", "../res/shaders/text.frag", nullptr, "text");
+    fontRenderer = make_unique<FontRenderer>(shaderManager->getShader("text"), "../res/fonts/MxPlus_IBM_BIOS.ttf", fontSize);
+
+    // Set uniforms
+    textShader.use().setVector2f("vertex", vec4(100, 100, .5, .5));
+    shapeShader.use().setMatrix4("projection", this->PROJECTION);
 }
 
 void Engine::initShapes() {
@@ -81,7 +85,7 @@ void Engine::initShapes() {
     for(int ii = 0; ii < NUM_LIGHTS; ii++) {
         vector<int> coordVect = coordinateMatrix[ii];
         lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{WIDTH / 4, HEIGHT / 2},
-                                           color{WHITE.red, WHITE.green, WHITE.blue, WHITE.alpha}));
+                                           color{YELLOW.red, YELLOW.green, YELLOW.blue, YELLOW.alpha}));
     }
 }
 
@@ -108,7 +112,7 @@ void Engine::processInput() {
         if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             for (const unique_ptr<Rect> &light: lights) {
                 if (light->isOverlapping(*cursor)) {
-                    ++squareClicked;
+                    moveCount++;
                     if (light->getColor3() == WHITE_VECT) { light->setColor(YELLOW); }
                     else { light->setColor(WHITE); }
                     // TODO: Change the color of the neighboring lights
@@ -157,11 +161,10 @@ void Engine::render() {
     switch (screen) {
         case start: {
             // Add instructions screen with text (freetype?)
-            string message = "Put out all the lights!\n"
-                             "Press s to start";
-            // (12 * message.length()) is the offset to center text.
-            // 12 pixels is the width of each character scaled by 1.
-            this->fontRenderer->renderText(message, WIDTH/2 - (12 * message.length()), HEIGHT/2, 1, vec3{1, 1, 1});
+            string message1 = "Put out all the lights!";
+            string message2 = "Press s to begin";
+            this->fontRenderer->renderText(message1, 130, 320, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(message2, 200, 320 - fontSize - 4, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
         case play: {
@@ -176,7 +179,7 @@ void Engine::render() {
             string message = "Winner!";
             // (12 * message.length()) is the offset to center text.
             // 12 pixels is the width of each character scaled by 1.
-            this->fontRenderer->renderText(message, WIDTH/2 - (12 * message.length()), HEIGHT/2, 1, vec3{1, 1, 1});
+            this->fontRenderer->renderText(message, 320, 320 - fontSize - 4, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
     }

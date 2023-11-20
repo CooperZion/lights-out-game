@@ -24,26 +24,26 @@ class Engine {
         GLFWwindow* window{};
 
         /// @brief The width and height of the window.
-        const unsigned int WIDTH = 1600, HEIGHT = 1200; // Window dimensions
+        const int WIDTH = 1600, HEIGHT = 1200; // Window dimensions
 
         /// @brief Responsible for loading and storing all the shaders used in the project.
         /// @details Initialized in initShaders()
         unique_ptr<ShaderManager> shaderManager;
+        unique_ptr<FontRenderer> fontRenderer;
 
         // Shapes
         vector<vector<int>> coordinateMatrix;   // A 2-D vector of coordinates for the lights
         vector<unique_ptr<Rect>> lights;
         unique_ptr<Rect> cursor;
 
-
-    // Shaders
+        // Shaders
         Shader shapeShader;
-
-        unique_ptr<FontRenderer> fontRenderer;
+        Shader textShader;
 
         double mouseX, mouseY;
+        int fontSize = 24;
 
-    public:
+public:
         /// @brief Constructor for the Engine class.
         /// @details Initializes window and shaders.
         Engine();
