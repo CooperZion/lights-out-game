@@ -11,19 +11,17 @@ const color BLACK(0, 0, 0);
 const color YELLOW(1, 1, 0);
 const color RED(1, 0, 0);
 
-// vec3 objects representing the colors for comparisons 
-vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
+// vec3 object representing the color for comparisons
 vec3 YELLOW_VECT = {YELLOW.red, YELLOW.green, YELLOW.blue};
 
 // counter for moves
 static int moveCount = 0;
 
-// Clock variables
-clock_t clockObj;
-static int startTime, currTime, endTime;
+// Time keeping variables
+static int startTime, endTime;
 
 
-enum state {start, play, over};
+enum state {start, instructions, play, over};
 state screen = start;
 
 Engine::Engine() {
@@ -121,46 +119,58 @@ void Engine::processInput() {
     cursor->setPosX(mouseX);
     cursor->setPosY(mouseY);
 
-    if (screen == start && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        startTime = clock();
-        screen = play;
-    }
-
-    if (screen == play) {
-        // Variable to hold mouse press status
-        bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-
-        // If the mouse has been pressed and released, we're gonna do a bunch of stuff
-        // For all the lights, if they were overlapping, invert the color of it and
-        // the color of its neighbors. The logic for the neighbors is brute-forced
-        // because I didn't have time to write a generalized system. Save the hovered-over
-        // node to render its outline
-        for (int ii = 0; ii < lights.size(); ii++) {
-            if (lights[ii]->isOverlapping(*cursor)) {
-                if (!mousePressed && mousePressedLastFrame) {
-                    moveCount++;
-                    // All this mess is the logic making vectors of the lights to invert
-                    if (ii == 0) { neighborVect = {ii, ii + 1, ii + 5}; }
-                    else if (ii == 4) { neighborVect = {ii, ii - 1, ii + 5}; }
-                    else if (ii == 20) { neighborVect = {ii, ii + 1, ii - 5}; }
-                    else if (ii == 24) { neighborVect = {ii, ii - 1, ii - 5}; }
-                    else if (ii >= 1 && ii <= 3) { neighborVect = {ii, ii - 1, ii + 1, ii + 5}; }
-                    else if (ii >= 21 && ii <= 23) { neighborVect = {ii, ii - 1, ii + 1, ii - 5}; }
-                    else if (ii == 5 || ii == 10 || ii == 15) { neighborVect = {ii, ii + 1, ii + 5, ii - 5}; }
-                    else if (ii == 9 || ii == 14 || ii == 19) { neighborVect = {ii, ii - 1, ii + 5, ii - 5}; }
-                    else { neighborVect = {ii, ii - 1, ii + 1, ii - 5, ii + 5}; }
-                    // Invert each light
-                    for (int jj: neighborVect) {
-                        if (lights[jj]->getColor3() == YELLOW_VECT) { lights[jj]->setColor(GRAY); }
-                        else { lights[jj]->setColor(YELLOW); }
-                    }
-                }
-                // Save the index of the hovered index
-                hoverIndices.push_back(ii);
-            }
+    switch (screen) {
+        case start: {
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                startTime = clock();
+                screen = play;
+            } else if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) { screen = instructions; }
+            break;
         }
-        // Save the status of the mouse press
-        mousePressedLastFrame = mousePressed;
+        case instructions: {
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                startTime = clock();
+                screen = play;
+            }
+            break;
+        }
+        case play: {
+            // Variable to hold mouse press status
+            bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+            // If the mouse has been pressed and released, we're gonna do a bunch of stuff
+            // For all the lights, if they were overlapping, invert the color of it and
+            // the color of its neighbors. The logic for the neighbors is brute-forced
+            // because I didn't have time to write a generalized system. Save the hovered-over
+            // node to render its outline
+            for (int ii = 0; ii < lights.size(); ii++) {
+                if (lights[ii]->isOverlapping(*cursor)) {
+                    if (!mousePressed && mousePressedLastFrame) {
+                        moveCount++;
+                        // All this mess is the logic making vectors of the lights to invert
+                        if (ii == 0) { neighborVect = {ii, ii + 1, ii + 5}; }
+                        else if (ii == 4) { neighborVect = {ii, ii - 1, ii + 5}; }
+                        else if (ii == 20) { neighborVect = {ii, ii + 1, ii - 5}; }
+                        else if (ii == 24) { neighborVect = {ii, ii - 1, ii - 5}; }
+                        else if (ii >= 1 && ii <= 3) { neighborVect = {ii, ii - 1, ii + 1, ii + 5}; }
+                        else if (ii >= 21 && ii <= 23) { neighborVect = {ii, ii - 1, ii + 1, ii - 5}; }
+                        else if (ii == 5 || ii == 10 || ii == 15) { neighborVect = {ii, ii + 1, ii + 5, ii - 5}; }
+                        else if (ii == 9 || ii == 14 || ii == 19) { neighborVect = {ii, ii - 1, ii + 5, ii - 5}; }
+                        else { neighborVect = {ii, ii - 1, ii + 1, ii - 5, ii + 5}; }
+                        // Invert each light
+                        for (int jj: neighborVect) {
+                            if (lights[jj]->getColor3() == YELLOW_VECT) { lights[jj]->setColor(GRAY); }
+                            else { lights[jj]->setColor(YELLOW); }
+                        }
+                    }
+                    // Save the index of the hovered index
+                    hoverIndices.push_back(ii);
+                }
+            }
+            // Save the status of the mouse press
+            mousePressedLastFrame = mousePressed;
+            break;
+        }
     }
 }
 
@@ -204,11 +214,26 @@ void Engine::render() {
             string commandMessage2 = "[i] to show the directions";
             string commandMessage3 = "[s] to launch the game";
             string commandMessage4 = "[Esc] to quit";
-            this->fontRenderer->renderText(titleMessage, 260, 400, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(titleMessage, 260, 500, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             this->fontRenderer->renderText(commandMessage1, 290, 270, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             this->fontRenderer->renderText(commandMessage2, 100, 240, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             this->fontRenderer->renderText(commandMessage3, 140, 210, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             this->fontRenderer->renderText(commandMessage4, 250, 180, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            break;
+        }
+        case instructions: {
+            string titleMessage = "Lights Out!";
+            string instructionMessage1 = "The goal of this game is to";
+            string instructionMessage2 = "turn off all the lights.";
+            string instructionMessage3 = "Clicking a light inverts it as";
+            string instructionMessage4 = "well as its immediate neighbors.";
+            string instructionMessage5 = "Press [s] to launch the game when ready";
+            this->fontRenderer->renderText(titleMessage, 260, 500, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(instructionMessage1, 140, 300, 0.8, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(instructionMessage2, 170, 270, 0.8, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(instructionMessage3, 110, 240, 0.8, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(instructionMessage4, 95, 210, 0.8, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(instructionMessage5, 30, 180, 0.8, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
         case play: {
