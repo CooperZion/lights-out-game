@@ -42,7 +42,7 @@ class Engine {
 
         double mouseX, mouseY;
         int fontSize = 24;
-
+        bool allLightsOff;
 public:
         /// @brief Constructor for the Engine class.
         /// @details Initializes window and shaders.

@@ -55,9 +55,9 @@ unsigned int Engine::initWindow(bool debug) {
 
 void Engine::initShaders() {
     shaderManager = make_unique<ShaderManager>();
-    shapeShader = this->shaderManager->loadShader("../res/shaders/rect.vert",
-                                                  "../res/shaders/rect.frag",
-                                                  nullptr, "rect");
+    shapeShader = this->shaderManager->loadShader("../res/shaders/shape.vert",
+                                                  "../res/shaders/shape.frag",
+                                                  nullptr, "shape");
     shapeShader.use();
     shapeShader.setMatrix4("projection", this->PROJECTION);
 
@@ -78,13 +78,13 @@ void Engine::initShapes() {
         for (int row = 0; row < 5; row++) {
             // TODO: Change this to be the correct vector of coordinates, may need to be done manually
             // This will probably just need to be guess-and-check
-            coordinateMatrix.push_back({(int) (0.2 * column * WIDTH), (int) (0.2 * row * HEIGHT)});
+            coordinateMatrix.push_back({(int) (column * 50), (int) (row * 50)});
         }
     }
 
     for(int ii = 0; ii < NUM_LIGHTS; ii++) {
         vector<int> coordVect = coordinateMatrix[ii];
-        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{WIDTH / 4, HEIGHT / 2},
+        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{20, 20},
                                            color{YELLOW.red, YELLOW.green, YELLOW.blue, YELLOW.alpha}));
     }
 }
@@ -141,9 +141,11 @@ void Engine::update() {
 
     // If we're playing and all the lights are off, change screen to over (end the game)
     if (screen == play) {
-        bool allLightsOff = true;
+        allLightsOff = true;
         for (const unique_ptr<Rect> &light: lights) {
-            if (light->getColor3() == YELLOW_VECT) {
+            if (light->getRed() == YELLOW.red &&
+                light->getGreen() == YELLOW.green &&
+                light->getBlue() == YELLOW.blue) {
                 allLightsOff = false;
             }
         }
@@ -164,7 +166,7 @@ void Engine::render() {
             string message1 = "Put out all the lights!";
             string message2 = "Press s to begin";
             this->fontRenderer->renderText(message1, 130, 320, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
-            this->fontRenderer->renderText(message2, 200, 320 - fontSize - 4, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(message2, 200, 280, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
         case play: {
@@ -172,6 +174,7 @@ void Engine::render() {
                 light->setUniforms();
                 light->draw();
             }
+            break;
         }
         case over: {
             // Show win message
@@ -179,7 +182,7 @@ void Engine::render() {
             string message = "Winner!";
             // (12 * message.length()) is the offset to center text.
             // 12 pixels is the width of each character scaled by 1.
-            this->fontRenderer->renderText(message, 320, 320 - fontSize - 4, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(message, 320, 280, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
     }
