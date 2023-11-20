@@ -1,16 +1,26 @@
 #include "engine.h"
 #include <iostream>
+#include <string>
 
+using namespace std;
+
+// Color objects
 const color WHITE(1, 1, 1);
 const color GRAY(0.5, 0.5, 0.5);
-vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
 const color BLACK(0, 0, 0);
 const color YELLOW(1, 1, 0);
-vec3 YELLOW_VECT = {YELLOW.red, YELLOW.green, YELLOW.blue};
 const color RED(1, 0, 0);
-int NUM_LIGHTS = 25;
+
+// vec3 objects representing the colors for comparisons 
+vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
+vec3 YELLOW_VECT = {YELLOW.red, YELLOW.green, YELLOW.blue};
+
+// counter for moves
 static int moveCount = 0;
-static vector<int> hoverIndices;
+
+// Clock variables
+clock_t clockObj;
+static int startTime, currTime, endTime;
 
 
 enum state {start, play, over};
@@ -65,7 +75,7 @@ void Engine::initShaders() {
 
     // Configure text shader and renderer
     textShader = shaderManager->loadShader("../res/shaders/text.vert", "../res/shaders/text.frag", nullptr, "text");
-    fontRenderer = make_unique<FontRenderer>(shaderManager->getShader("text"), "../res/fonts/MxPlus_IBM_BIOS.ttf", fontSize);
+    fontRenderer = make_unique<FontRenderer>(shaderManager->getShader("text"), "../res/fonts/MxPlus_IBM_BIOS.ttf", FONT_SIZE);
 
     // Set uniforms
     textShader.use().setVector2f("vertex", vec4(100, 100, .5, .5));
@@ -112,46 +122,46 @@ void Engine::processInput() {
     cursor->setPosY(mouseY);
 
     if (screen == start && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        // TODO: Start timer here
+        // TODO: start timer here
+        startTime = clock();
         screen = play;
     }
 
     if (screen == play) {
-        // Variable to track mouse press
+        // Variable to hold mouse press status
         bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 
         // If the mouse has been pressed and released, we're gonna do a bunch of stuff
-        if (!mousePressed && mousePressedLastFrame) {
-            // For all the lights, if they were overlapping, invert the color of it and
-            // the color of its neighbors. The logic for the neighbors is brute-forced
-            // because I didn't have time to write a generalized system
-            for (int ii = 0; ii < lights.size(); ii++) {
-                if (lights[ii]->isOverlapping(*cursor)) {
+        // For all the lights, if they were overlapping, invert the color of it and
+        // the color of its neighbors. The logic for the neighbors is brute-forced
+        // because I didn't have time to write a generalized system. Save the hovered-over
+        // node to render its outline
+        for (int ii = 0; ii < lights.size(); ii++) {
+            if (lights[ii]->isOverlapping(*cursor)) {
+                if (!mousePressed && mousePressedLastFrame) {
                     moveCount++;
-                    if (ii == 0) {neighborVect = {ii, ii + 1, ii + 5};}
-                    else if (ii == 4) {neighborVect = {ii, ii - 1, ii + 5};}
-                    else if (ii == 20) {neighborVect = {ii, ii + 1, ii - 5};}
-                    else if (ii == 24) {neighborVect = {ii, ii - 1, ii - 5};}
-                    else if (ii >= 1 && ii <= 3) {neighborVect = {ii, ii - 1, ii + 1, ii + 5};}
-                    else if (ii >= 21 && ii <= 23) {neighborVect = {ii, ii - 1, ii + 1, ii - 5};}
-                    else if (ii == 5 || ii == 10 || ii == 15) {neighborVect = {ii, ii + 1, ii + 5, ii - 5};}
-                    else if (ii == 9 || ii == 14 || ii == 19) {neighborVect = {ii, ii - 1, ii + 5, ii - 5};}
-                    else {neighborVect = {ii, ii - 1, ii + 1, ii - 5, ii + 5};}
-                    for (int jj : neighborVect) {
-                        if (lights[jj]->getColor3() == YELLOW_VECT) {lights[jj]->setColor(GRAY);}
-                        else {lights[jj]->setColor(YELLOW);}
+                    // All this mess is the logic making vectors of the lights to invert
+                    if (ii == 0) { neighborVect = {ii, ii + 1, ii + 5}; }
+                    else if (ii == 4) { neighborVect = {ii, ii - 1, ii + 5}; }
+                    else if (ii == 20) { neighborVect = {ii, ii + 1, ii - 5}; }
+                    else if (ii == 24) { neighborVect = {ii, ii - 1, ii - 5}; }
+                    else if (ii >= 1 && ii <= 3) { neighborVect = {ii, ii - 1, ii + 1, ii + 5}; }
+                    else if (ii >= 21 && ii <= 23) { neighborVect = {ii, ii - 1, ii + 1, ii - 5}; }
+                    else if (ii == 5 || ii == 10 || ii == 15) { neighborVect = {ii, ii + 1, ii + 5, ii - 5}; }
+                    else if (ii == 9 || ii == 14 || ii == 19) { neighborVect = {ii, ii - 1, ii + 5, ii - 5}; }
+                    else { neighborVect = {ii, ii - 1, ii + 1, ii - 5, ii + 5}; }
+                    // Invert each light
+                    for (int jj: neighborVect) {
+                        if (lights[jj]->getColor3() == YELLOW_VECT) { lights[jj]->setColor(GRAY); }
+                        else { lights[jj]->setColor(YELLOW); }
                     }
                 }
-            }
-        }
-        mousePressedLastFrame = mousePressed;
-
-        // Save the index of hovered-over lights to render the outline shapes
-        for(int ii = 0; ii < lights.size(); ii++) {
-            if(lights[ii]->isOverlapping(*cursor)) {
+                // Save the index of the hovered index
                 hoverIndices.push_back(ii);
             }
         }
+        // Save the status of the mouse press
+        mousePressedLastFrame = mousePressed;
     }
 }
 
@@ -173,7 +183,7 @@ void Engine::update() {
             }
         }
         if (allLightsOff) {
-            // TODO: End timer here
+            endTime = clock();
             screen = over;
         }
     }
@@ -188,14 +198,22 @@ void Engine::render() {
 
     switch (screen) {
         case start: {
-            // Add instructions screen with text (freetype?)
-            string message1 = "Put out all the lights!";
-            string message2 = "Press s to begin";
-            this->fontRenderer->renderText(message1, 130, 320, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
-            this->fontRenderer->renderText(message2, 200, 280, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            // TODO: Add instructions screen with text
+            // Display intro screen
+            string titleMessage = "Lights Out!";
+            string commandMessage1 = "Commands:";
+            string commandMessage2 = "[i] to show the directions";
+            string commandMessage3 = "[s] to launch the game";
+            string commandMessage4 = "[Esc] to quit";
+            this->fontRenderer->renderText(titleMessage, 260, 400, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(commandMessage1, 290, 270, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(commandMessage2, 100, 240, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(commandMessage3, 140, 210, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(commandMessage4, 250, 180, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
         case play: {
+            // Show the light squares and the hover outlines if there are any
             for(int ii = 0; ii < hoverIndices.size(); ii++) {
                 redOutline[hoverIndices[ii]]->setUniforms();
                 redOutline[hoverIndices[ii]]->draw();
@@ -205,28 +223,34 @@ void Engine::render() {
                 light->setUniforms();
                 light->draw();
             }
+
+            // Display the moves taken and the timer
+            string movesMessage = "Moves: " + to_string(moveCount);
+            string timerMessage = "Time: " + to_string((clock() - startTime) / 1000);
+            this->fontRenderer->renderText(movesMessage, 550, 400, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(timerMessage, 550, 200, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+
             break;
         }
         case over: {
-            // Show win message
-            string message = "Winner!";
-            for(int ii = 0; ii < hoverIndices.size(); ii++) {
-                redOutline[hoverIndices[ii]]->setUniforms();
-                redOutline[hoverIndices[ii]]->draw();
-                hoverIndices.pop_back();
-            }
+            // Show the lights all turned off
             for (const unique_ptr<Rect> &light: lights) {
                 light->setUniforms();
                 light->draw();
             }
-            this->fontRenderer->renderText(message, 320, 280, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+
+            // Show win message
+            string winMessage = "Winner!";
+            string movesMessage = "Moves: " + to_string(moveCount);
+            string timerMessage = "Time: " + to_string((endTime - startTime) / 1000);
+            this->fontRenderer->renderText(winMessage, 220, 290, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(movesMessage, 550, 400, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
+            this->fontRenderer->renderText(timerMessage, 550, 200, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }
     }
-
-//    cursor->setUniforms();
-//    cursor->draw();
-
+    cursor->setUniforms();
+    cursor->draw();
     glfwSwapBuffers(window);
 }
 
