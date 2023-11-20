@@ -75,7 +75,6 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
         src/framework/fontRenderer.cpp
         src/framework/fontRenderer.cpp
         src/framework/font.cpp
-        src/framework/light.h
 )
 
 target_link_libraries(${PROJECT_NAME} glfw freetype)
