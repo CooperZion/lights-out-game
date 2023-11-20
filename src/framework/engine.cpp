@@ -2,6 +2,7 @@
 #include <iostream>
 
 const color WHITE(1, 1, 1);
+const color GRAY(0.5, 0.5, 0.5);
 vec3 WHITE_VECT = {WHITE.red, WHITE.green, WHITE.blue};
 const color BLACK(0, 0, 0);
 const color YELLOW(1, 1, 0);
@@ -77,24 +78,26 @@ void Engine::initShapes() {
 
     for (int column = 1; column <= 5; column++) {
         for (int row = 1; row <= 5; row++) {
-            // TODO: Change this to be the correct vector of coordinates, may need to be done manually
             // This will probably just need to be guess-and-check
-            coordinateMatrix.push_back({column * 200, row * 200});
+            coordinateMatrix.push_back({column * 160, row * 160});
         }
     }
 
 
     for(int ii = 0; ii < NUM_LIGHTS; ii++) {
         vector<int> coordVect = coordinateMatrix[ii];
-        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{170, 170},
+        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{140, 140},
                                            color{YELLOW.red, YELLOW.green, YELLOW.blue, YELLOW.alpha}));
-        redOutline.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{190, 190},
+        redOutline.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{155, 155},
                                            color{RED.red, RED.green, RED.blue, RED.alpha}));
     }
 }
 
 void Engine::processInput() {
     glfwPollEvents();
+
+    static bool mousePressedLastFrame = false;
+    vector<int> neighborVect;
 
     // Close window if escape key is pressed
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -109,20 +112,39 @@ void Engine::processInput() {
     cursor->setPosY(mouseY);
 
     if (screen == start && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        // TODO: Start timer here
         screen = play;
     }
 
     if (screen == play) {
-        if (glfwGetKey(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-            for (const unique_ptr<Rect> &light: lights) {
-                if (light->isOverlapping(*cursor)) {
+        // Variable to track mouse press
+        bool mousePressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+        // If the mouse has been pressed and released, we're gonna do a bunch of stuff
+        if (!mousePressed && mousePressedLastFrame) {
+            // For all the lights, if they were overlapping, invert the color of it and
+            // the color of its neighbors. The logic for the neighbors is brute-forced
+            // because I didn't have time to write a generalized system
+            for (int ii = 0; ii < lights.size(); ii++) {
+                if (lights[ii]->isOverlapping(*cursor)) {
                     moveCount++;
-                    if (light->getColor3() == WHITE_VECT) { light->setColor(YELLOW); }
-                    else { light->setColor(WHITE); }
-                    // TODO: Change the color of the neighboring lights
+                    if (ii == 0) {neighborVect = {ii, ii + 1, ii + 5};}
+                    else if (ii == 4) {neighborVect = {ii, ii - 1, ii + 5};}
+                    else if (ii == 20) {neighborVect = {ii, ii + 1, ii - 5};}
+                    else if (ii == 24) {neighborVect = {ii, ii - 1, ii - 5};}
+                    else if (ii >= 1 && ii <= 3) {neighborVect = {ii, ii - 1, ii + 1, ii + 5};}
+                    else if (ii >= 21 && ii <= 23) {neighborVect = {ii, ii - 1, ii + 1, ii - 5};}
+                    else if (ii == 5 || ii == 10 || ii == 15) {neighborVect = {ii, ii + 1, ii + 5, ii - 5};}
+                    else if (ii == 9 || ii == 14 || ii == 19) {neighborVect = {ii, ii - 1, ii + 5, ii - 5};}
+                    else {neighborVect = {ii, ii - 1, ii + 1, ii - 5, ii + 5};}
+                    for (int jj : neighborVect) {
+                        if (lights[jj]->getColor3() == YELLOW_VECT) {lights[jj]->setColor(GRAY);}
+                        else {lights[jj]->setColor(YELLOW);}
+                    }
                 }
             }
         }
+        mousePressedLastFrame = mousePressed;
 
         // Save the index of hovered-over lights to render the outline shapes
         for(int ii = 0; ii < lights.size(); ii++) {
@@ -132,7 +154,6 @@ void Engine::processInput() {
         }
     }
 }
-
 
 void Engine::update() {
     // Change values of objects
@@ -151,7 +172,10 @@ void Engine::update() {
                 allLightsOff = false;
             }
         }
-        if (allLightsOff) {screen = over;}
+        if (allLightsOff) {
+            // TODO: End timer here
+            screen = over;
+        }
     }
 }
 
@@ -185,10 +209,16 @@ void Engine::render() {
         }
         case over: {
             // Show win message
-            // TODO: Add instructions screen with text (freetype?)
             string message = "Winner!";
-            // (12 * message.length()) is the offset to center text.
-            // 12 pixels is the width of each character scaled by 1.
+            for(int ii = 0; ii < hoverIndices.size(); ii++) {
+                redOutline[hoverIndices[ii]]->setUniforms();
+                redOutline[hoverIndices[ii]]->draw();
+                hoverIndices.pop_back();
+            }
+            for (const unique_ptr<Rect> &light: lights) {
+                light->setUniforms();
+                light->draw();
+            }
             this->fontRenderer->renderText(message, 320, 280, 1, vec3{WHITE.red, WHITE.green, WHITE.blue});
             break;
         }

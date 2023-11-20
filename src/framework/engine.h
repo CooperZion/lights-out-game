@@ -24,7 +24,7 @@ class Engine {
         GLFWwindow* window{};
 
         /// @brief The width and height of the window.
-        const int WIDTH = 1200, HEIGHT = 1200; // Window dimensions
+        const int WIDTH = 1200, HEIGHT = 960; // Window dimensions
 
         /// @brief Responsible for loading and storing all the shaders used in the project.
         /// @details Initialized in initShaders()
