@@ -9,6 +9,7 @@ vec3 YELLOW_VECT = {YELLOW.red, YELLOW.green, YELLOW.blue};
 const color RED(1, 0, 0);
 int NUM_LIGHTS = 25;
 static int moveCount = 0;
+static vector<int> hoverIndices;
 
 
 enum state {start, play, over};
@@ -74,18 +75,21 @@ void Engine::initShapes() {
     // Shape object for the cursor
     cursor = make_unique<Rect>(shapeShader, vec2(10, 10), vec2(0, 0), WHITE);
 
-    for (int column = 0; column < 5; column++) {
-        for (int row = 0; row < 5; row++) {
+    for (int column = 1; column <= 5; column++) {
+        for (int row = 1; row <= 5; row++) {
             // TODO: Change this to be the correct vector of coordinates, may need to be done manually
             // This will probably just need to be guess-and-check
-            coordinateMatrix.push_back({(int) (column * 50), (int) (row * 50)});
+            coordinateMatrix.push_back({column * 200, row * 200});
         }
     }
 
+
     for(int ii = 0; ii < NUM_LIGHTS; ii++) {
         vector<int> coordVect = coordinateMatrix[ii];
-        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{20, 20},
+        lights.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{170, 170},
                                            color{YELLOW.red, YELLOW.green, YELLOW.blue, YELLOW.alpha}));
+        redOutline.push_back(make_unique<Rect>(shapeShader, vec2{coordVect[0], coordVect[1]}, vec2{190, 190},
+                                           color{RED.red, RED.green, RED.blue, RED.alpha}));
     }
 }
 
@@ -120,12 +124,10 @@ void Engine::processInput() {
             }
         }
 
-        for(const unique_ptr<Rect> &light : lights) {
-            if(light->isOverlapping(*cursor)) {
-                // TODO: Make the lights outline in red here
-                // There will be a second set of rectangles with the same center coordinates
-                // as the first set, but slightly larger and red, and they're only rendered
-                // when their accompanying rectangle is hovered over (this if-statement)
+        // Save the index of hovered-over lights to render the outline shapes
+        for(int ii = 0; ii < lights.size(); ii++) {
+            if(lights[ii]->isOverlapping(*cursor)) {
+                hoverIndices.push_back(ii);
             }
         }
     }
@@ -170,6 +172,11 @@ void Engine::render() {
             break;
         }
         case play: {
+            for(int ii = 0; ii < hoverIndices.size(); ii++) {
+                redOutline[hoverIndices[ii]]->setUniforms();
+                redOutline[hoverIndices[ii]]->draw();
+                hoverIndices.pop_back();
+            }
             for (const unique_ptr<Rect> &light: lights) {
                 light->setUniforms();
                 light->draw();

@@ -24,7 +24,7 @@ class Engine {
         GLFWwindow* window{};
 
         /// @brief The width and height of the window.
-        const int WIDTH = 1600, HEIGHT = 1200; // Window dimensions
+        const int WIDTH = 1200, HEIGHT = 1200; // Window dimensions
 
         /// @brief Responsible for loading and storing all the shaders used in the project.
         /// @details Initialized in initShaders()
@@ -34,6 +34,7 @@ class Engine {
         // Shapes
         vector<vector<int>> coordinateMatrix;   // A 2-D vector of coordinates for the lights
         vector<unique_ptr<Rect>> lights;
+        vector<unique_ptr<Rect>> redOutline;
         unique_ptr<Rect> cursor;
 
         // Shaders
