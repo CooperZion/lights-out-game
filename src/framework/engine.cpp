@@ -122,7 +122,6 @@ void Engine::processInput() {
     cursor->setPosY(mouseY);
 
     if (screen == start && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        // TODO: start timer here
         startTime = clock();
         screen = play;
     }
